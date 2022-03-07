@@ -19,7 +19,6 @@ from transformers import (
 class Scorer(ABC):
     def __init__(self):
         self.sentence_tokenizer = nltk.data.load("tokenizers/punkt/russian.pickle")
-        self.threshold = 0.5
 
     @abstractmethod
     def score_sentences(self, sentences: List[str]) -> List[float]:

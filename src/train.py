@@ -6,14 +6,7 @@ from sklearn.metrics import recall_score, precision_score, f1_score, accuracy_sc
 from sklearn.model_selection import train_test_split
 
 from definitions import ROOT_PATH
-from src.models import Scorer, TfidfScorer, BertScorer
-
-
-def create_submission(scorer: Scorer, df: pd.DataFrame, name_postfix: str = ""):
-    scores = scorer.score_news(test_df["text"])
-    df["score"] = scores
-
-    df.to_csv(os.path.join(ROOT_PATH, f"artifacts/submission{name_postfix}.csv"), index=False)
+from src.models import TfidfScorer, BertScorer
 
 
 def calc_metrics(preds, target):
@@ -40,7 +33,9 @@ if __name__ == "__main__":
 
     X, y = train_df["sentence"], train_df["label"]
 
-    X_train, X_val, y_train, y_val = train_test_split(X, y, train_size=args.train_size, shuffle=True, random_state=args.seed)
+    X_train, X_val, y_train, y_val = train_test_split(
+        X, y, train_size=args.train_size, shuffle=True, random_state=args.seed
+    )
 
     scorer = BertScorer() if args.model == "bert" else TfidfScorer(args.seed)
     scorer.fit(X_train, y_train, X_val, y_val, n_epochs=args.n_epochs, batch_size=args.bs, use_gpu=args.use_gpu)
