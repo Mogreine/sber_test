@@ -23,7 +23,7 @@ if __name__ == "__main__":
     args.add_argument("--model", type=str, default="bert", choices={"bert", "tf-idf"}, help="Which model to use.")
     args.add_argument("--seed", type=int, default=42)
     args.add_argument("--train_size", type=float, default=0.8, help="Train size when splitting data.")
-    args.add_argument("--bs", type=int, default=32, help="Batch size for bert training.")
+    args.add_argument("--bs", type=int, default=16, help="Batch size for bert training.")
     args.add_argument("--n_epochs", type=int, default=4, help="Number of epochs.")
     args.add_argument("--use_gpu", action="store_true", help="Whether to switch to gpu for training.")
     args = args.parse_args()
