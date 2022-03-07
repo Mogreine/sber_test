@@ -41,15 +41,23 @@ if __name__ == "__main__":
     scorer.fit(X_train, y_train, X_val, y_val, n_epochs=args.n_epochs, batch_size=args.bs, use_gpu=args.use_gpu)
 
     if args.model == "tf-idf":
-        train_metrics = calc_metrics(scorer.score_sentences(X_train), y_train)
-        test_metrics = calc_metrics(scorer.score_sentences(X_val), y_val)
+        train_scores = scorer.score_sentences(X_train)
+        train_scores[train_scores > 0.5] = 1
+        train_scores[train_scores <= 0.5] = 0
+
+        val_scores = scorer.score_sentences(X_val)
+        val_scores[val_scores > 0.5] = 1
+        val_scores[val_scores <= 0.5] = 0
+
+        train_metrics = calc_metrics(train_scores, y_train)
+        val_metrics = calc_metrics(val_scores, y_val)
 
         print("Train:")
         for metric, val in train_metrics.items():
             print(f"{metric}: {val:.3f}")
 
         print("\nVal:")
-        for metric, val in test_metrics.items():
+        for metric, val in val_metrics.items():
             print(f"{metric}: {val:.3f}")
 
     print("Done!")

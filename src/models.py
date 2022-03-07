@@ -1,14 +1,21 @@
 import itertools
 import nltk.data
+import numpy as np
 import torch
 import pytorch_lightning as pl
 
 from typing import List, Iterable, Dict, Union, Tuple
 from abc import ABC, abstractmethod
+
+from nltk import SnowballStemmer
+from sklearn.decomposition import TruncatedSVD
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import Normalizer
 from torch.utils.data import TensorDataset, DataLoader
 from tqdm import tqdm
+from nltk.corpus import stopwords
 from transformers import (
     BertTokenizer,
     BertForSequenceClassification,
@@ -68,13 +75,13 @@ class Scorer(ABC):
 class TfidfScorer(Scorer):
     def __init__(self, seed: int = 42):
         super().__init__()
-        self.tf_idf = TfidfVectorizer()
+        self.tf_idf = TfidfVectorizer(max_df=0.7, min_df=2)
         self.clf = LogisticRegression(
-            penalty="l2",
-            C=10,
-            tol=1e-4,
-            solver="lbfgs",
-            max_iter=100,
+            penalty="l1",
+            C=5,
+            tol=1e-6,
+            solver="liblinear",
+            max_iter=1000,
             random_state=seed,
         )
 
@@ -88,13 +95,25 @@ class TfidfScorer(Scorer):
         **kwargs,
     ) -> None:
         X_train, y_train = self._preprocess(X_train, y_train)
-
         X_train = self.tf_idf.fit_transform(X_train)
         self.clf.fit(X_train, y_train)
 
+    def _preprocess(
+        self, sentences: Iterable[str], labels: Union[Iterable[int], None]
+    ) -> Tuple[List[str], Union[List[int], None]]:
+        sentences, labels = super()._preprocess(sentences, labels)
+
+        sentences = [s.lower() for s in sentences]
+
+        symbols = "!\"#$%&()*+-./:;<=>?@[\]^_`{|}~\n"
+        for i in symbols:
+            sentences = np.char.replace(sentences, i, ' ')
+
+        return sentences, labels
+
     def score_sentences(self, sentences: List[str]) -> List[float]:
         sentences_transformed = self.tf_idf.transform(sentences)
-        return self.clf.predict(sentences_transformed)
+        return self.clf.predict_proba(sentences_transformed)[:, 1]
 
 
 class BertScorer(Scorer):
@@ -129,7 +148,7 @@ class BertScorer(Scorer):
         y_train: Iterable[int],
         X_val: Union[Iterable[str], None] = None,
         y_val: Union[Iterable[int], None] = None,
-        n_epochs: int = 2,
+        n_epochs: int = 4,
         batch_size: int = 32,
         val_interval: float = 0.5,
         use_gpu: bool = True,
@@ -165,7 +184,7 @@ class BertScorer(Scorer):
             batch = [t.to(self.model.device) for t in batch]
             logits = self.model(*batch).logits
 
-            scores.append(logits.softmax(-1).amax(-1).cpu().numpy().tolist())
+            scores.append(logits.softmax(-1)[:, 1].amax().cpu().numpy().tolist())
 
         return list(itertools.chain(*scores))
 
