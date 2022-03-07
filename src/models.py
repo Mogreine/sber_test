@@ -184,7 +184,7 @@ class BertScorer(Scorer):
             batch = [t.to(self.model.device) for t in batch]
             logits = self.model(*batch).logits
 
-            scores.append(logits.softmax(-1)[:, 1].amax().cpu().numpy().tolist())
+            scores.append(logits.softmax(-1)[:, 1].cpu().numpy().tolist())
 
         return list(itertools.chain(*scores))
 
