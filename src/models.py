@@ -4,18 +4,13 @@ import numpy as np
 import torch
 import pytorch_lightning as pl
 
-from typing import List, Iterable, Dict, Union, Tuple
+from typing import List, Iterable, Union, Tuple
 from abc import ABC, abstractmethod
 
-from nltk import SnowballStemmer
-from sklearn.decomposition import TruncatedSVD
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.linear_model import LogisticRegression
-from sklearn.pipeline import make_pipeline
-from sklearn.preprocessing import Normalizer
 from torch.utils.data import TensorDataset, DataLoader
 from tqdm import tqdm
-from nltk.corpus import stopwords
 from transformers import (
     BertTokenizer,
     BertForSequenceClassification,
